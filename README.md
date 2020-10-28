@@ -9,3 +9,4 @@ Interesting links and books:
     
     Albert: Good source of code for car-racingv0: https://github.com/elsheikh21/car-racing-ppo
     
+    Dominik: Intro to RL by Tensorflow (and application on cartpole) https://www.tensorflow.org/agents/tutorials/0_intro_rl
