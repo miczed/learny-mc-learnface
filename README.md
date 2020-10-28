@@ -7,3 +7,5 @@ Interesting links and books:
     
     Albert: First algo that did solve the game https://worldmodels.github.io
     
+    Albert: Good source of code for car-racingv0: https://github.com/elsheikh21/car-racing-ppo
+    
