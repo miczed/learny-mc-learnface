@@ -16,6 +16,11 @@ import random
 env = gym.make("Taxi-v3").env
 
 
+'''
+
+SETTING UP
+
+'''
 
 
 
@@ -24,13 +29,28 @@ env = gym.make("Taxi-v3").env
 q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
 # Hyperparameters
-alpha = 0.1
-gamma = 0.6
-epsilon = 0.1
+alpha = 0.1	# learning rate (i.e. rate of updating Q table)
+gamma = 0.6	# discount factor (i.e. how to value short term vs long term)
+epsilon = 0.1	# possiblity of exploring rather than exploiting
 
 # For plotting metrics
 all_epochs = []
 all_penalties = []
+
+
+
+
+
+'''
+
+TRAINING
+
+'''
+
+
+
+
+
 
 for i in range(1, 100001):
     state = env.reset()
@@ -65,8 +85,6 @@ for i in range(1, 100001):
 print("Training finished.\n")
 
 
-
-
 print(30*"#")
 print("OPTIMAL SOLUTION")
 print("\n\n")
@@ -78,7 +96,21 @@ print(30*"#")
 
 sleep(5)
 
-"""Evaluate agent's performance after Q-learning"""
+
+
+
+
+
+
+
+
+
+"""
+
+Evaluate agent's performance after Q-learning
+
+
+"""
 
 total_epochs, total_penalties = 0, 0
 episodes = 100
@@ -109,11 +141,23 @@ print(f"Average penalties per episode: {total_penalties / episodes}")
 
 sleep(10)
 
+
+
+
+
+
+
+
+'''
+
+ANIMATING THE OPTIMAL Q TABLE IN ACTION
+
+'''
+
 print("\n\n")
 print("The optimal solution in action (slowed down):")
 
 sleep(10)
-
 
 
 frames = [] # for animation
