@@ -5,6 +5,7 @@ This is a repo for the Reinforcement Learning course at the University of Zurich
 
 [Open AI Car Racing on Youtube](https://www.youtube.com/watch?v=-8YrGfK3aqc&ab_channel=JanoB), [Code](https://git.kpi.fei.tuke.sk/mp302zf/smad-rl)
 
+[CarRacing solved with Double Deep Q-Network](https://github.com/hchkaiban/CarRacingRL_DDQN)
 
 This is a deep explanation with code that could help us to understand how to program a neural network in the car-racing environment https://towardsdatascience.com/world-models-in-tensorflow-episode-1-2b3c217ebc8f
     
