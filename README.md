@@ -9,7 +9,8 @@ Interesting links and books:
     
     Albert: Good source of code for car-racingv0: https://github.com/elsheikh21/car-racing-ppo
     
-    Dominik: Intro to RL by Tensorflow (and application on cartpole) https://www.tensorflow.org/agents/tutorials/0_intro_rl
+    Dominik: Intro to RL by Tensorflow (and application on cartpole)
+    		https://www.tensorflow.org/agents/tutorials/0_intro_rl
     
     Dominik: Tutorial for DQN (Q learning with NN)
     		Part 1 https://towardsdatascience.com/reinforcement-learning-with-python-part-1-creating-the-environment-dad6e0237d2d
@@ -21,3 +22,6 @@ Interesting links and books:
     		
     Dominik: Solution for Taxi
     		https://www.learndatasci.com/tutorials/reinforcement-q-learning-scratch-python-openai-gym/
+    		
+    Dominik: Difference between Vlaue iteration and Q Learning
+    		https://stackoverflow.com/questions/28937803/what-is-the-difference-between-q-learning-and-value-iteration
