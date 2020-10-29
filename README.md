@@ -2,6 +2,7 @@
 This is a repo for the Reinforcement Learning course at the University of Zurich.
 
 ### Interesting links and books:
+[Slides to Video Lecture by David Silver](https://www.davidsilver.uk/teaching/)
 
 [Open AI Car Racing on Youtube](https://www.youtube.com/watch?v=-8YrGfK3aqc&ab_channel=JanoB), [Code](https://git.kpi.fei.tuke.sk/mp302zf/smad-rl)
 
