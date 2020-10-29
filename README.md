@@ -36,3 +36,5 @@ Solution for Taxi
 [Similar Car-Racing Problem solved with Deep Deterministic Policy Gradient](https://phazcode.gitlab.io/trackmaster/)
 
 [Course for Reinforcement Learning](https://github.com/simoninithomas/Deep_reinforcement_learning_Course)
+
+[Policy Gradients in a nutshell](https://towardsdatascience.com/policy-gradients-in-a-nutshell-8b72f9743c5d)
