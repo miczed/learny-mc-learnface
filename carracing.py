@@ -2,11 +2,8 @@ import gym
 import numpy as np
 
 
-env=gym.make('CarRacing-v0')
-
-best_score=0
-
-
+env = gym.make('CarRacing-v0')
+best_score = 0
 
 #######################################################################################
 #
@@ -33,53 +30,17 @@ for i in range(1): #Here state the number of games do you want the AI to play
 env.close()
 '''
 
-
-
-
 #######################################################################################
 #
 #                                     PREPARATIONS
 #
 #######################################################################################
 
-
-
-
-
-
-
-#these printouts are for understanding the prepare_statespace function can be deleted after
-
 observation = env.reset()
-for _ in range(1):
+for _ in range(15):
     env.render()
     action = env.action_space.sample()
     observation, reward, done, info = env.step(action)
-
-
-print(observation.shape)
-print(observation)
-
-
-print(observation[48,48,0:3]) #RGB pixel in the middle
-observation_after = np.dot(observation[...,0:3],[0.299, 0.587, 0.114])
-observation_after = observation/255.0
-
-
-print(observation_after.shape)
-print(observation_after)
-
-
-
-
-
-
-
-
-
-
-
-
 
 def compress_statespace(raw_statespace):
 
@@ -114,6 +75,21 @@ def compress_statespace(raw_statespace):
 print(observation.shape)
 compressed_observation = compress_statespace(observation)
 print(compressed_observation.shape)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
