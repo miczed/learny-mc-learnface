@@ -35,7 +35,9 @@ class DQN:
         model.add(Dense(48, activation="relu"))                             # dense_1
         model.add(Dense(24, activation="relu"))                             # dense_2
         model.add(Dense(self.env.action_space.n))                           # dense_3
+        print(model.output_shape)
         model.compile(loss="mean_squared_error",optimizer=Adam(lr=self.learning_rate))
+        print(model.summary())
         return model
 
 
@@ -45,8 +47,12 @@ class DQN:
         self.epsilon *= self.epsilon_decay                  # let epsilon decay
         self.epsilon = max(self.epsilon_min, self.epsilon)  # make sure it's not lower than minimum
         if np.random.random() < self.epsilon:               # randomly decide if exploit or explore
+            print("random action",self.env.action_space.sample())
             return self.env.action_space.sample()               # explore
-        return np.argmax(self.model.predict(state)[0])          # exploit
+
+        print("max", self.model.predict(state)[0])
+        print("max", np.argmax(self.model.predict(state)[0]))
+        return np.argmax(self.model.predict(state)[0])          # exploit. the model predicts for each of the three actions the resulting Q value . we choose the the highest argument
 
 
 
@@ -107,6 +113,7 @@ def main():
                 print("step:",step)
 
             action = dqn_agent.act(cur_state)               # act given current state
+            print("main", action)
             new_state, reward, done, _ = env.step(action)   # result of act
 
             # reward = reward if not done else -20          # don't know what that has been ???
