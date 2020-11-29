@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import gym
 
 #######################################################################################
 #
@@ -36,6 +37,8 @@ def compress_statespace(raw_statespace):
 
     compressed_statespace_84x84_normalized = compressed_statespace_84x84/255.0
     # normalize the gray values to values between 0 and 1 (don't know if necessary)
+
+    #return compressed_statespace_84x84_normalized
 
     compressed_statespace = compressed_statespace_84x84_normalized.flatten()
     # flat the matrix to a one-dimensional vector for the NN to read
@@ -164,9 +167,12 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
 
 
+env = gym.make('CarRacing-v0')
+obs = env.reset()
+print(obs.shape)
 
-
-
+obs2 = compress_statespace(obs)
+print(obs2.shape)
 
 
 
