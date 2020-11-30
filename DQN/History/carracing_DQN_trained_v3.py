@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import torch as T
 from carracing_DQN_v3 import DeepQNetwork
-from preparations import transform_action, transform_action_backwards, compress_statespace
+from utils import transform_action, transform_action_backwards, compress_statespace
 
 
 

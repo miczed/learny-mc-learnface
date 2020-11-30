@@ -1,7 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import gym
+import csv
 
 #######################################################################################
 #
@@ -115,7 +115,7 @@ def transform_action_backwards(quasi_continuous_action):
 
 
 
-def plot_learning_curve(x, scores, epsilons, filename, lines=None):
+def plot_learning_curve(x, scores, epsilons, filename, lines=None, reload=None):
 
     '''
 
@@ -130,6 +130,10 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
     :return:
     '''
 
+
+    if reload is not None:
+        plot_data = csv.reader("plot_data.csv", delimiter=";")
+        # TODO finish funtion to plot graphs when resuming training
 
     fig=plt.figure()
     ax=fig.add_subplot(111, label="1")
@@ -160,23 +164,6 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
     plt.savefig(filename)
     plt.close('all')
-
-
-
-
-
-
-
-env = gym.make('CarRacing-v0')
-obs = env.reset()
-print(obs.shape)
-
-obs2 = compress_statespace(obs)
-print(obs2.shape)
-
-
-
-
 
 
 
