@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from preparations import transform_action, transform_action_backwards, compress_statespace, plot_learning_curve
+from utils import transform_action, transform_action_backwards, compress_statespace, plot_learning_curve
 
 
 env = gym.make('CarRacing-v0')

@@ -67,7 +67,6 @@ class DeepQNetwork:
         model = Sequential()
         input_shape = (7056,)
         model.add(Input(shape=input_shape))
-        model.add(Dense(units=2000, activation="relu"))
         model.add(Dense(units=100, activation="relu"))
         model.add(Dense(units=5))
         model.compile(loss="mse", optimizer=Adam(lr=self.lr))
@@ -122,8 +121,8 @@ class DeepQNetwork:
 
         for sample in samples:
             state, action_num, reward, new_state, done = sample  # get a random state from the samples
-            state = np.reshape(state, (1, 7056))  # TODO same as act() ???
-            new_state = np.reshape(new_state, (1, 7056))  # TODO same as act() ???
+            state = np.reshape(state, (1, 7056))  # TODO same as act() ??? is this adding a dimension right?
+            new_state = np.reshape(new_state, (1, 7056))  # TODO same as act() ??? is this adding a dimension right?
             Q_pred = self.model.predict(state)  # predict what to do with base model, given random state
             Q_true = Q_pred # declare to "true" Q value
             if done:
@@ -148,7 +147,9 @@ class DeepQNetwork:
 
         self.target_model.save(name)
 
+    def print_summary(self):
 
+        print(self.model.summary())
 
 def main():
     env = gym.make("CarRacing-v0")
@@ -165,13 +166,15 @@ def main():
                          reload=False,
                          reload_path="Models/20201129/DQNmodel")
 
-    trials = 200         # aka episodes (original 1000)
-    trial_len = 1200     # how long one episode is
+    trials = 2         # aka episodes (original 1000)
+    trial_len = 50     # how long one episode is
 
     step = []
     score_hist = []
     eps_hist = []
     trial_array = []
+
+    agent.print_summary()
 
     for trial in range(trials):
 
@@ -187,6 +190,7 @@ def main():
                 print("\tTrial:", trial, "of", trials-1, "| Step:",step, "of",trial_len-100)
 
             num_action = agent.act(cur_state)               # act given current state, either explore or exploit
+
             #print("\tact: ", num_action)
             #print("DEBUG main: action by dqn:", num_action)
             action = transform_action(num_action)               # TRANSFORM ACTION
@@ -213,13 +217,13 @@ def main():
         trial_array.append(trial)
         eps_hist.append(agent.epsilon)
         plot_learning_curve(x=trial_array, scores=score_hist, epsilons=eps_hist, filename="Models/{}/{}".format(TRIAL_ID, "Performance"))
-        plot_data = np.array(trial_array, score_hist, eps_hist)
-        np.savetxt("plot_data.csv", plot_data, delimiter=";")
+        plot_data = np.array([trial_array, score_hist, eps_hist])
+        np.savetxt("Models/{}/plot_data.csv".format(TRIAL_ID), plot_data, delimiter=";")
 
         end_trial = time.time()
         time_trial = round((end_trial - start_trial)/60,1)
 
-        if score <= 300:                                                 # after 'for loop' finishes or done, check if score is <900 then print fail         # TODO score >900
+        if score < 900:                                                 # after 'for loop' finishes or done, check if score is <900 then print fail         # TODO score >900
             print("Finished trial {} in {} Minutes, but only reached {} points ({} tiles)".format(trial, time_trial, round(score,0), tiles))
             env.stats_recorder.save_complete()
             env.stats_recorder.done = True
@@ -236,7 +240,7 @@ def main():
 
 
 start = time.time()
-TRIAL_ID = "20201129"
+TRIAL_ID = "_"
 
 if __name__ == "__main__":
     main()
