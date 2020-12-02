@@ -12,7 +12,7 @@ from utils import compress_statespace_light
 #
 #######################################################################################
 
-model = load_model("Models/20201130/DQNmodel")
+model = load_model("Models/20201201/DQNmodel")
 
 env = gym.make("CarRacing-v0")
 state = env.reset()

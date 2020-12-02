@@ -171,8 +171,8 @@ def main():
     env = gym.make("CarRacing-v0")
     env = gym.wrappers.Monitor(env, "Models/{}/recordings".format(TRIAL_ID), force=True, video_callable=lambda episode_id:True)
 
-    agent = DeepQNetwork(tau=0.25,
-                         lr=0.01,                   # 0.01 by Aldape and Sowell
+    agent = DeepQNetwork(tau=0.3,
+                         lr=0.02,                   # 0.01 by Aldape and Sowell
                          gamma=0.99,
                          epsilon=1,
                          epsilon_decay=0.9995,
@@ -183,7 +183,7 @@ def main():
                          reload_path="Models/20201129/DQNmodel")
 
     trials = 20         # aka episodes (original 1000)
-    trial_len = 1000     # how long one episode is
+    trial_len = 1200     # how long one episode is
 
     step = []
     score_hist = []
@@ -255,7 +255,7 @@ def main():
 
 
 start = time.time()
-TRIAL_ID = "20201130"
+TRIAL_ID = "20201201"
 
 if __name__ == "__main__":
     main()
