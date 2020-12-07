@@ -50,16 +50,17 @@ class DeepQNetwork:
         self.lr = lr
         self.reload = reload
         self.reload_path = reload_path
-        self.mem_path = mem_path
 
         self.model = self.create_model()
         self.target_model = self.create_model()
 
         if self.reload == True:
+            # load weights
             print("Reloading model from", reload_path)
-            self.model.load_weights("./"+self.reload_path)
-            self.target_model.load_weights("./"+self.reload_path)
+            self.model.load_weights(self.reload_path+"weights.h5")
+            self.target_model.load_weights(self.reload_path+"weights.h5")
 
+            # and load memory
             with open(reload_path+"mem.file", 'rb') as file:
                     mem = pickle.load(file)
                     for i in range(len(mem)):
@@ -178,11 +179,18 @@ class DeepQNetwork:
 
     def save_model(self, save_path):
 
-        self.target_model.save_weights(save_path+"target_model.ckpt")
+        self.target_model.save_weights(save_path+"weights.h5")
 
     def print_summary(self):
 
         print(self.model.summary())
+
+
+
+
+
+
+TRIAL_ID = "20201207-1"
 
 def main():
     env = gym.make("CarRacing-v0")
@@ -196,11 +204,11 @@ def main():
                          epsilon_min=0.2,          # 0.1 by Aldape and Sowell
                          batch_size=64,             # 64 by Zhang and Sun
                          mem_size= 50000,
-                         reload=True,
+                         reload=False,
                          reload_path="Models/20201207-1/")
 
-    trials = 100         # aka episodes              100 by
-    trial_len = 100     # how long one episode is
+    trials = 1000         # aka episodes              100 by
+    trial_len = 1000     # how long one episode is
     kill_score = -99.0           # which score kills episode
     seed = None # or None
 
@@ -305,12 +313,11 @@ def main():
             env.stats_recorder.done = True
             break
 
-        agent.save_model("Models/{}/DQNmodel/".format(TRIAL_ID))
+        agent.save_model("Models/{}/".format(TRIAL_ID))
         agent.save_mem("Models/{}/mem.file".format(TRIAL_ID))
 
 
 start = time.time()
-TRIAL_ID = "20201207-2"
 
 if __name__ == "__main__":
     main()
