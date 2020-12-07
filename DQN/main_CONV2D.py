@@ -7,14 +7,17 @@
 
 import time
 import gym
+import pandas as pd
 import numpy as np
 import random
+import pickle
 from collections import deque
 from keras.models import Sequential, load_model
-from keras.layers import Activation, Dense, Conv2D, MaxPooling2D, Flatten
+from keras.layers import Activation, Dense, Conv2D, MaxPooling2D, Flatten, Dropout
 from keras.optimizers import Adam
+from keras.utils import plot_model
 
-from utils import compress_statespace_light, transform_action, transform_action_backwards, plot_learning_curve
+from utils import compress_statespace_CONV2D, transform_action, plot_learning_curve
 
 
 class DeepQNetwork:
@@ -32,16 +35,30 @@ class DeepQNetwork:
                 https://keras.io/api/layers/convolution_layers/convolution2d/
                 https://towardsdatascience.com/reinforcement-learning-w-keras-openai-dqns-1eed3a5338c
                 https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf
+                https://www.youtube.com/watch?v=YRhxdVk_sIs&feature=emb_logo
+                https://arxiv.org/pdf/2010.00717.pdf
     '''
 
     def __init__(self, gamma, epsilon, lr, epsilon_min, epsilon_decay, tau, batch_size, mem_size, reload=False, reload_path=None):
+
+        self.mem_cntr = 0
+        self.mem_size = mem_size
+        self.batch_size = batch_size
+        self.memory = deque(maxlen=self.mem_size)
 
         self.lr = lr
         self.reload = reload
         self.reload_path = reload_path
         if self.reload == True:
-            self.model = self.load_model(self.reload_path)
-            self.target_model = self.load_model(self.reload_path)
+            self.model = self.load_model(self.reload_path+"DQNmodel")
+            self.target_model = self.load_model(self.reload_path+"DQNmodel")
+
+            with open(reload_path+"mem.file", 'rb') as file:
+                    mem = pickle.load(file)
+                    for i in range(len(mem)):
+                        mem_ = mem[i]
+                        self.memory.append(mem_)
+
         else:
             self.model = self.create_model()
             self.target_model = self.create_model()
@@ -52,10 +69,7 @@ class DeepQNetwork:
         self.epsilon_min = epsilon_min
         self.tau = tau
 
-        self.mem_cntr = 0
-        self.mem_size = mem_size
-        self.batch_size = batch_size
-        self.memory = deque(maxlen=self.mem_size)
+
 
     def load_model(self, path):
 
@@ -65,14 +79,18 @@ class DeepQNetwork:
     def create_model(self):
 
         model = Sequential()
-        input_shape = (99,84,84,1)
-        model.add(Conv2D(64, (20,20), input_shape=input_shape[1:])) #input shape to ignore batch size
-        model.add(Activation("relu"))
-        model.add(MaxPooling2D(pool_size=(10,10)))
+        input_shape = (999,42,42,1)
+        # Model Architecture by Aldape and Sowell, but only half the filters since we downsized the resolution
+        # Dropout by Zhang and Sun
+        # this reduces the number of trainable parameters by a LOT!
+        model.add(Conv2D(32, (5,5), input_shape=input_shape[1:], activation="relu")) #input shape to ignore batch size
+        model.add(Dropout(.2))
+        model.add(Conv2D(64, (5,5), activation="relu"))         # note stride is how fast the conv window moves. used by Zhang and Sun but not by Aldape and Sowell
+        model.add(Dropout(.2))
+        model.add(Conv2D(64, (3,3), activation="relu"))
         model.add(Flatten())
-        model.add(Dense(64))
-        model.add(Dense(5))
-        model.add(Activation("relu"))
+        model.add(Dense(32, activation="softmax"))
+        model.add(Dense(5)) # note that we take the argmax in the act() function also acts somewhat like a softmax activation
         model.compile(loss="mse", optimizer=Adam(lr=self.lr))
         return model
 
@@ -129,8 +147,6 @@ class DeepQNetwork:
 
         for sample in samples:
             state, action_num, reward, new_state, done = sample  # get a random state from the samples
-
-
             state = np.expand_dims(state, axis=0) # TODO WHAT THE HELL WHY IS THIS WORKING
             state = np.expand_dims(state, axis=3)
             new_state = np.expand_dims(new_state, axis=0)
@@ -147,7 +163,8 @@ class DeepQNetwork:
                 Q_true[0][action_num] = reward + Q_future * self.gamma - Q_pred[0][action_num] # adjust the "true" Q value with immediate reward, and discounted future Q-value for tha action that was taken
                 #print("Debug replay: Q_true:", Q_true)
 
-            self.model.fit(state, Q_true, epochs=1, verbose=0)
+            history_callback = self.model.fit(state, Q_true, epochs=1, verbose=0)
+            return history_callback
 
     def target_train(self):                                     # reorient goals, i.e. copy the weights from the main model into the target model
 
@@ -157,6 +174,11 @@ class DeepQNetwork:
             target_weights[i] = weights[i] * self.tau + target_weights[i] * (1 - self.tau)
         self.target_model.set_weights(target_weights)
 
+    def save_mem(self, name):
+
+        mem = self.memory
+        with open(name, 'wb') as file:
+            pickle.dump(mem, file, pickle.HIGHEST_PROTOCOL)
 
     def save_model(self, name):
 
@@ -167,38 +189,68 @@ class DeepQNetwork:
         print(self.model.summary())
 
 
+
+
+
+
+
+
+
 def main():
     env = gym.make("CarRacing-v0")
     env = gym.wrappers.Monitor(env, "Models/{}/recordings".format(TRIAL_ID), force=True, video_callable=lambda episode_id:True)
 
-    agent = DeepQNetwork(tau=0.3,
-                         lr=0.02,                   # 0.01 by Aldape and Sowell
-                         gamma=0.99,
-                         epsilon=1,
-                         epsilon_decay=0.9995,
-                         epsilon_min=0.1,          # 0.1 by Aldape amd Sowell
-                         batch_size=32,
+    agent = DeepQNetwork(tau=0.5,
+                         lr=0.0005,                   # 0.01 by Aldape and Sowell     0.00001 by Zhang and Sun
+                         gamma=0.98,
+                         epsilon=0.3,
+                         epsilon_decay=0.99995,
+                         epsilon_min=0.3,          # 0.1 by Aldape and Sowell
+                         batch_size=64,             # 64 by Zhang and Sun
                          mem_size= 10000,
                          reload=False,
-                         reload_path="Models/20201129/DQNmodel")
+                         reload_path="Models/20201206-5/")
 
-    trials = 20         # aka episodes (original 1000)
-    trial_len = 1200     # how long one episode is
+    trials = 100         # aka episodes              100 by
+    trial_len = 1000     # how long one episode is
+    kill_score = -99.0           # which score kills episode
+    seed = None # or None
+
+    agent.print_summary()
+    plot_model(agent.target_model, to_file="Models/{}/model.png".format(TRIAL_ID))  # Plot architecture
+    model_data = pd.DataFrame({'tau': [agent.tau],                                  # save training params
+                               'lr': [agent.lr],
+                               'gamma': [agent.gamma],
+                               'eps':[agent.epsilon],
+                               'eps_decay':[agent.epsilon_decay],
+                               'eps_min':[agent.epsilon_min],
+                               'batch_size':[agent.batch_size],
+                               'mem_size':[agent.mem_size],
+                               'trials':[trials],
+                               'steps':[trial_len],
+                               'kill_score':[kill_score],
+                               'seed':[seed]})
+    model_data.to_csv(path_or_buf="Models/{}/{}".format(TRIAL_ID, "model_data"), index=False, float_format="%.3f")
 
     step = []
+    loss_hist = []
     score_hist = []
     eps_hist = []
     trial_array = []
 
-    agent.print_summary()
-
     for trial in range(trials):
 
         start_trial = time.time()
+        if seed is not None:
+            env.seed(seed)
+        cur_state = env.reset()
+        for i in range(50):
+            cur_state, a, b, c = env.step([0, 0, 0])    # Wait for the zoom to settle in
 
-        cur_state = compress_statespace_light(env.reset())         # COMPRESS current state
+        cur_state = compress_statespace_CONV2D(cur_state)         # COMPRESS current state
         score = 0
         tiles = 0
+        loss_hist_ = []
 
         for step in range(trial_len):
 
@@ -211,7 +263,7 @@ def main():
             action = transform_action(num_action)               # TRANSFORM ACTION
             #print("DEBUG main: action to step:", action)
             new_state, reward, done, _ = env.step(action)   # actual result of act chosen by dqn_agent.act()
-            new_state = compress_statespace_light(new_state)      # COMPRESS new state
+            new_state = compress_statespace_CONV2D(new_state)      # COMPRESS new state
             score += reward
             if reward >= 0:
                 tiles += 1
@@ -219,26 +271,39 @@ def main():
             agent.remember(cur_state, num_action, reward, new_state, done)
             #print("\treplay")
             # internally iterates default (prediction) model
-            agent.replay()
+            history_callback = agent.replay()
+
+            if history_callback is not None:
+                loss_hist_.append(history_callback.history["loss"])
+                history_callback = None # to save memory
+
             #print("\ttrain")
             agent.target_train()
             cur_state = new_state
 
-            if done:
-                env.stats_recorder.save_complete()
+            if score<kill_score:
+                print("\tTrial:", trial, "of", trials-1, "| kill")
                 break
+            if done:
+                print("\tTrial:", trial, "of", trials-1, "| done")
+                break
+
+        # Maybe clear here trial specific variables like cur_state and history_callback to save memory?
+        cur_state = None
 
         score_hist.append(score)
         trial_array.append(trial)
         eps_hist.append(agent.epsilon)
+        loss_hist.append(np.mean(loss_hist_))
         plot_learning_curve(x=trial_array, scores=score_hist, epsilons=eps_hist, filename="Models/{}/{}".format(TRIAL_ID, "Performance"))
-        plot_data = np.array([trial_array, score_hist, eps_hist])
-        np.savetxt("Models/{}/plot_data.csv".format(TRIAL_ID), plot_data, delimiter=";")
+        plot_data = pd.DataFrame({'trial':trial_array, 'score_history':score_hist, 'epsilon_history':eps_hist, 'loss_history':loss_hist})
+        plot_data.to_csv(path_or_buf="Models/{}/{}".format(TRIAL_ID,"plot_data"),index=False, float_format="%.3f")
+        plot_data = None # to save memory?
 
         end_trial = time.time()
         time_trial = round((end_trial - start_trial)/60,1)
 
-        if score < 900:                                                 # after 'for loop' finishes or done, check if score is <900 then print fail         # TODO score >900
+        if score < 900:                                                 # after 'for loop' finishes or done, check if score is <900 then print fail
             print("Finished trial {} in {} Minutes, but only reached {} points ({} tiles)".format(trial, time_trial, round(score,0), tiles))
             env.stats_recorder.save_complete()
             env.stats_recorder.done = True
@@ -251,14 +316,20 @@ def main():
             break
 
         agent.save_model("Models/{}/DQNmodel".format(TRIAL_ID))
-
+        agent.save_mem("Models/{}/mem.file".format(TRIAL_ID))
 
 
 start = time.time()
-TRIAL_ID = "20201201"
+TRIAL_ID = "20201206-6"
 
 if __name__ == "__main__":
     main()
 
 end = time.time()
 print("Elapsed time:", round((end-start)/60,1)," Minutes")
+
+
+
+
+# TODO Investigate Memory Issue
+# Seems like there is no big memory increase after trial is ended with "done" or "kill"

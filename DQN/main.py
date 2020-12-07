@@ -14,7 +14,7 @@ from keras.models import Sequential, load_model
 from keras.layers import Input, Dense
 from keras.optimizers import Adam
 
-from utils import compress_statespace, transform_action, transform_action_backwards, plot_learning_curve
+from utils import compress_statespace, transform_action, plot_learning_curve
 
 
 class DeepQNetwork:
