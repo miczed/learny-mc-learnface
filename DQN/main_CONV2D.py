@@ -5,6 +5,7 @@
 #                                                                                      #
 ########################################################################################
 
+import os
 import time
 import gym
 import pandas as pd
@@ -12,13 +13,12 @@ import numpy as np
 import random
 import pickle
 from collections import deque
-from keras.models import Sequential, load_model
-from keras.layers import Activation, Dense, Conv2D, MaxPooling2D, Flatten, Dropout
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
 from keras.optimizers import Adam
 from keras.utils import plot_model
 
 from utils import compress_statespace_CONV2D, transform_action, plot_learning_curve
-
 
 class DeepQNetwork:
     '''
@@ -37,6 +37,7 @@ class DeepQNetwork:
                 https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf
                 https://www.youtube.com/watch?v=YRhxdVk_sIs&feature=emb_logo
                 https://arxiv.org/pdf/2010.00717.pdf
+                https://missinglink.ai/guides/keras/keras-conv2d-working-cnn-2d-convolutions-keras/
     '''
 
     def __init__(self, gamma, epsilon, lr, epsilon_min, epsilon_decay, tau, batch_size, mem_size, reload=False, reload_path=None):
@@ -49,9 +50,15 @@ class DeepQNetwork:
         self.lr = lr
         self.reload = reload
         self.reload_path = reload_path
+        self.mem_path = mem_path
+
+        self.model = self.create_model()
+        self.target_model = self.create_model()
+
         if self.reload == True:
-            self.model = self.load_model(self.reload_path+"DQNmodel")
-            self.target_model = self.load_model(self.reload_path+"DQNmodel")
+            print("Reloading model from", reload_path)
+            self.model.load_weights("./"+self.reload_path)
+            self.target_model.load_weights("./"+self.reload_path)
 
             with open(reload_path+"mem.file", 'rb') as file:
                     mem = pickle.load(file)
@@ -59,22 +66,11 @@ class DeepQNetwork:
                         mem_ = mem[i]
                         self.memory.append(mem_)
 
-        else:
-            self.model = self.create_model()
-            self.target_model = self.create_model()
-
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
         self.tau = tau
-
-
-
-    def load_model(self, path):
-
-        model = load_model(path)
-        return model
 
     def create_model(self):
 
@@ -84,9 +80,9 @@ class DeepQNetwork:
         # Dropout by Zhang and Sun
         # this reduces the number of trainable parameters by a LOT!
         model.add(Conv2D(32, (5,5), input_shape=input_shape[1:], activation="relu")) #input shape to ignore batch size
-        model.add(Dropout(.2))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
         model.add(Conv2D(64, (5,5), activation="relu"))         # note stride is how fast the conv window moves. used by Zhang and Sun but not by Aldape and Sowell
-        model.add(Dropout(.2))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
         model.add(Conv2D(64, (3,3), activation="relu"))
         model.add(Flatten())
         model.add(Dense(32, activation="softmax"))
@@ -180,39 +176,31 @@ class DeepQNetwork:
         with open(name, 'wb') as file:
             pickle.dump(mem, file, pickle.HIGHEST_PROTOCOL)
 
-    def save_model(self, name):
+    def save_model(self, save_path):
 
-        self.target_model.save(name)
+        self.target_model.save_weights(save_path+"target_model.ckpt")
 
     def print_summary(self):
 
         print(self.model.summary())
 
-
-
-
-
-
-
-
-
 def main():
     env = gym.make("CarRacing-v0")
     env = gym.wrappers.Monitor(env, "Models/{}/recordings".format(TRIAL_ID), force=True, video_callable=lambda episode_id:True)
 
-    agent = DeepQNetwork(tau=0.5,
-                         lr=0.0005,                   # 0.01 by Aldape and Sowell     0.00001 by Zhang and Sun
-                         gamma=0.98,
-                         epsilon=0.3,
+    agent = DeepQNetwork(tau=0.33,
+                         lr=0.0001,                   # 0.01 by Aldape and Sowell     0.00001 by Zhang and Sun
+                         gamma=0.99,
+                         epsilon=1.0,
                          epsilon_decay=0.99995,
-                         epsilon_min=0.3,          # 0.1 by Aldape and Sowell
+                         epsilon_min=0.2,          # 0.1 by Aldape and Sowell
                          batch_size=64,             # 64 by Zhang and Sun
-                         mem_size= 10000,
-                         reload=False,
-                         reload_path="Models/20201206-5/")
+                         mem_size= 50000,
+                         reload=True,
+                         reload_path="Models/20201207-1/")
 
     trials = 100         # aka episodes              100 by
-    trial_len = 1000     # how long one episode is
+    trial_len = 100     # how long one episode is
     kill_score = -99.0           # which score kills episode
     seed = None # or None
 
@@ -229,7 +217,9 @@ def main():
                                'trials':[trials],
                                'steps':[trial_len],
                                'kill_score':[kill_score],
-                               'seed':[seed]})
+                               'seed':[seed],
+                               'reload':[agent.reload],
+                               'reload_path':[agent.reload_path]})
     model_data.to_csv(path_or_buf="Models/{}/{}".format(TRIAL_ID, "model_data"), index=False, float_format="%.3f")
 
     step = []
@@ -315,12 +305,12 @@ def main():
             env.stats_recorder.done = True
             break
 
-        agent.save_model("Models/{}/DQNmodel".format(TRIAL_ID))
+        agent.save_model("Models/{}/DQNmodel/".format(TRIAL_ID))
         agent.save_mem("Models/{}/mem.file".format(TRIAL_ID))
 
 
 start = time.time()
-TRIAL_ID = "20201206-6"
+TRIAL_ID = "20201207-2"
 
 if __name__ == "__main__":
     main()

@@ -12,7 +12,7 @@ from utils import compress_statespace_CONV2D
 #
 #######################################################################################
 
-model = load_model("Models/20201205xxx/DQNmodel")
+model = load_model("Models/20201207-1/DQNmodel")
 
 env = gym.make("CarRacing-v0")
 state = env.reset()

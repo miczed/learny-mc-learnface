@@ -140,7 +140,7 @@ def plot_learning_curve(x, scores, epsilons, filename):
 #env = gym.make("CarRacing-v0")
 #env.seed(20)
 #obs = env.reset()
-#for i in range(1):
+#for i in range(60):
 #    obs, a, b, c = env.step([0, +1, 0])
 #obs = compress_statespace_CONV2D(obs)
 #plt.imshow(obs, plt.cm.gray)
