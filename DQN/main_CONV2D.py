@@ -13,6 +13,7 @@ import numpy as np
 import random
 import pickle
 from collections import deque
+import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
 from keras.optimizers import Adam
@@ -56,9 +57,12 @@ class DeepQNetwork:
 
         if self.reload == True:
             # load weights
+            reload_path = reload_path
             print("Reloading model from", reload_path)
-            self.model.load_weights(self.reload_path+"weights.h5")
-            self.target_model.load_weights(self.reload_path+"weights.h5")
+            latest = tf.train.latest_checkpoint(self.reload_path)
+            print(latest)
+            self.model.load_weights(latest)
+            self.target_model.load_weights(latest)
 
             # and load memory
             with open(reload_path+"mem.file", 'rb') as file:
@@ -179,7 +183,7 @@ class DeepQNetwork:
 
     def save_model(self, save_path):
 
-        self.target_model.save_weights(save_path+"weights.h5")
+        self.target_model.save_weights(save_path+"weights.ckpt")
 
     def print_summary(self):
 
@@ -196,10 +200,10 @@ def main():
     env = gym.make("CarRacing-v0")
     env = gym.wrappers.Monitor(env, "Models/{}/recordings".format(TRIAL_ID), force=True, video_callable=lambda episode_id:True)
 
-    agent = DeepQNetwork(tau=0.33,
-                         lr=0.0001,                   # 0.01 by Aldape and Sowell     0.00001 by Zhang and Sun
+    agent = DeepQNetwork(tau=0.5,
+                         lr=0.0003,                   # 0.01 by Aldape and Sowell     0.00001 by Zhang and Sun
                          gamma=0.99,
-                         epsilon=1.0,
+                         epsilon=0.3,
                          epsilon_decay=0.99995,
                          epsilon_min=0.2,          # 0.1 by Aldape and Sowell
                          batch_size=64,             # 64 by Zhang and Sun
@@ -207,7 +211,7 @@ def main():
                          reload=False,
                          reload_path="Models/20201207-1/")
 
-    trials = 1000         # aka episodes              100 by
+    trials = 100         # aka episodes              100 by
     trial_len = 1000     # how long one episode is
     kill_score = -99.0           # which score kills episode
     seed = None # or None
